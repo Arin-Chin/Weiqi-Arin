@@ -118,8 +118,11 @@ class Board {
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     
-    const col = Math.round((x - this.margin) / this.cellSize);
-    const row = Math.round((y - this.margin) / this.cellSize);
+    let col = Math.round((x - this.margin) / this.cellSize);
+    let row = Math.round((y - this.margin) / this.cellSize);
+    // 边界保护：确保坐标在棋盘范围内
+    col = Math.max(0, Math.min(this.boardSize - 1, col));
+    row = Math.max(0, Math.min(this.boardSize - 1, row));
     
     return { col, row };
   }
@@ -298,6 +301,8 @@ class Stone {
  * 3. Rule类：封装所有围棋规则（纯业务逻辑，无视觉/DOM）
  */
 class Rule {
+  /** 四方向偏移常量（上、下、左、右） */
+  static DIRECTIONS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
   constructor(boardSize = 19) {
     this.boardSize = boardSize;
     this.reset(); // 初始化规则状态
@@ -343,7 +348,7 @@ class Rule {
     
     let capturedStones = 0;
     let koCandidate = null;
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const directions = Rule.DIRECTIONS;
 
     // 3. 检查提子
     for (let [dr, dc] of directions) {
@@ -413,7 +418,7 @@ class Rule {
     this.boardState[row][col] = currentColor;
     const opponent = currentColor === 'black' ? 'white' : 'black';
     let capturedStones = 0;
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const directions = Rule.DIRECTIONS;
     
     for (let [dr, dc] of directions) {
       const r = row + dr;
@@ -449,9 +454,11 @@ class Rule {
     const queue = [{ col, row }];
     visited.add(`${col},${row}`);
     
-    while (queue.length > 0) {
-      const { col: c, row: r } = queue.shift();
-      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    let idx = 0;
+    while (idx < queue.length) {
+      const { col: c, row: r } = queue[idx];
+      idx++;
+      const directions = Rule.DIRECTIONS;
       
       for (let [dr, dc] of directions) {
         const nr = r + dr;
@@ -479,7 +486,7 @@ class Rule {
   getLiberties(group) {
     const liberties = new Set();
     for (let { col, row } of group) {
-      const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+      const directions = Rule.DIRECTIONS;
       for (let [dr, dc] of directions) {
         const r = row + dr;
         const c = col + dc;
@@ -544,7 +551,7 @@ class Rule {
 
         while (queue.length > 0) {
           const { col: c, row: r } = queue.shift();
-          const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+          const directions = Rule.DIRECTIONS;
           
           for (let [dr, dc] of directions) {
             const nr = r + dr;
@@ -846,6 +853,91 @@ class UI {
 /**
  * 5. 主游戏类：整合所有模块，协调交互
  */
+
+/**
+ * Sound 工具类：使用 Web Audio API 合成落子音效，无需外部音频文件
+ */
+class Sound {
+  constructor() {
+    this.ctx = null; // 延迟初始化 AudioContext（需用户交互后）
+  }
+
+  /** 确保 AudioContext 已初始化（浏览器策略：需用户手势触发） */
+  ensureContext() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  /**
+   * 播放落子音效
+   * @param {string} color 'black' 或 'white'（黑白棋子音色略微不同）
+   */
+  playPlace(color) {
+    try {
+      this.ensureContext();
+      const ctx = this.ctx;
+      const now = ctx.currentTime;
+
+      // 短促的「咚」声
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      // 黑棋稍低沉（220Hz），白棋略清脆（280Hz）
+      osc.frequency.setValueAtTime(color === 'black' ? 220 : 280, now);
+      // 频率快速上扬再回落，模拟棋子接触棋盘的质感
+      osc.frequency.exponentialRampToValueAtTime(
+        color === 'black' ? 180 : 240, now + 0.08
+      );
+      
+      osc.type = 'sine';
+      osc.connect(gain);
+      
+      // 音量包络：迅速起音后快速衰减
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch (e) {
+      // 静默失败：音效不影响游戏
+    }
+  }
+
+  /**
+   * 播放提子音效
+   */
+  playCapture() {
+    try {
+      this.ensureContext();
+      const ctx = this.ctx;
+      const now = ctx.currentTime;
+
+      // 提子音效：略高、略带摩擦感的短音
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.frequency.setValueAtTime(350, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+      osc.type = 'triangle';
+      osc.connect(gain);
+      
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } catch (e) {
+      // 静默失败
+    }
+  }
+}
+
 class WeiQiGame {
   constructor() {
     // 初始化核心模块
@@ -853,6 +945,7 @@ class WeiQiGame {
     this.stone = new Stone(this.board);
     this.rule = new Rule(19);
     this.ui = new UI(this);
+    this.sound = new Sound();
 
     // 游戏全局状态
     this.mode = 'play'; // play/review
@@ -883,6 +976,8 @@ class WeiQiGame {
    */
   handleMouseMove(e) {
     const { col, row } = this.board.convertMouseToBoardPos(e.clientX, e.clientY);
+    // hover 位置未变化时不触发重绘
+    if (this.hoveredPos && this.hoveredPos.col === col && this.hoveredPos.row === row) return;
     this.hoveredPos = this.board.isValidPosition(col, row) ? { col, row } : null;
     this.redrawBoard();
   }
@@ -907,6 +1002,8 @@ class WeiQiGame {
     if (this.mode === 'review') {
       const result = this.rule.handleReviewMove(col, row, this.reviewCurrentColor);
       if (result.success) {
+        this.sound.playPlace(this.reviewCurrentColor);
+        if (result.captured > 0) this.sound.playCapture();
         this.ui.updateStatus(result.message);
         this.redrawBoard();
         this.ui.updateStats();
@@ -927,6 +1024,8 @@ class WeiQiGame {
         // 切换玩家
         this.currentPlayer = this.currentPlayer === 'black' ? 'white' : 'black';
         
+        this.sound.playPlace(this.currentPlayer === 'black' ? 'black' : 'white');
+        if (result.captured > 0) this.sound.playCapture();
         this.ui.updateStatus(`${this.currentPlayer === 'black' ? '黑方' : '白方'} 回合`);
         this.redrawBoard();
         this.ui.updateStats();
