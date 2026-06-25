@@ -711,6 +711,7 @@ class UI {
     
     // 其他按钮
     this.undoBtn = document.getElementById('undo-btn');
+    this.soundToggleBtn = document.getElementById('sound-toggle-btn');
     this.resetBtn = document.getElementById('reset-btn');
   }
 
@@ -720,6 +721,7 @@ class UI {
   bindEvents() {
     // 模式切换
     this.modeToggleBtn.addEventListener('click', () => this.game.toggleMode());
+    this.soundToggleBtn.addEventListener('click', () => this.game.toggleSound());
     
     // 棋子切换（打谱模式）
     this.blackStoneBtn.addEventListener('click', () => this.game.setReviewColor('black'));
@@ -859,10 +861,17 @@ class UI {
  */
 class Sound {
   constructor() {
-    this.ctx = null; // 延迟初始化 AudioContext（需用户交互后）
+    this.ctx = null;
+    this.enabled = true;
   }
 
-  /** 确保 AudioContext 已初始化（浏览器策略：需用户手势触发） */
+  /** 切换音效开关 */
+  toggle() {
+    this.enabled = !this.enabled;
+    return this.enabled;
+  }
+
+  /** 确保 AudioContext 已初始化 */
   ensureContext() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -873,65 +882,96 @@ class Sound {
   }
 
   /**
-   * 播放落子音效
-   * @param {string} color 'black' 或 'white'（黑白棋子音色略微不同）
+   * 模拟棋子落在木棋盘上的声音
+   * 用短脉冲噪声 + 低频共振，比纯正弦波更真实
    */
   playPlace(color) {
+    if (!this.enabled) return;
     try {
       this.ensureContext();
       const ctx = this.ctx;
       const now = ctx.currentTime;
 
-      // 短促的「咚」声
+      // 短时白噪声模拟棋子与木面的碰撞摩擦
+      const bufferSize = ctx.sampleRate * 0.04;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      // 带通滤波：让噪声听起来像木质的"咔嗒"
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = color === 'black' ? 800 : 1200;
+      bandpass.Q.value = 1.5;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.25, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+
+      noise.connect(bandpass);
+      bandpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.04);
+
+      // 低频共振：模拟棋盘木质共鸣
       const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      // 黑棋稍低沉（220Hz），白棋略清脆（280Hz）
-      osc.frequency.setValueAtTime(color === 'black' ? 220 : 280, now);
-      // 频率快速上扬再回落，模拟棋子接触棋盘的质感
-      osc.frequency.exponentialRampToValueAtTime(
-        color === 'black' ? 180 : 240, now + 0.08
-      );
-      
+      const oscGain = ctx.createGain();
       osc.type = 'sine';
-      osc.connect(gain);
-      
-      // 音量包络：迅速起音后快速衰减
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-      
-      gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(color === 'black' ? 130 : 180, now);
+      osc.frequency.exponentialRampToValueAtTime(
+        color === 'black' ? 80 : 120, now + 0.12
+      );
+      oscGain.gain.setValueAtTime(0.15, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+      osc.connect(oscGain);
+      oscGain.connect(ctx.destination);
       osc.start(now);
-      osc.stop(now + 0.2);
+      osc.stop(now + 0.15);
     } catch (e) {
-      // 静默失败：音效不影响游戏
+      // 静默失败
     }
   }
 
   /**
-   * 播放提子音效
+   * 模拟提子时棋子摩擦叠加的短促声音
    */
   playCapture() {
+    if (!this.enabled) return;
     try {
       this.ensureContext();
       const ctx = this.ctx;
       const now = ctx.currentTime;
 
-      // 提子音效：略高、略带摩擦感的短音
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.frequency.setValueAtTime(350, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.15);
-      osc.type = 'triangle';
-      osc.connect(gain);
-      
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-      
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.25);
+      // 轻轻拾起棋子的摩擦声
+      const bufferSize = ctx.sampleRate * 0.06;
+      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.value = 1500;
+      bandpass.Q.value = 0.8;
+
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.12, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+
+      noise.connect(bandpass);
+      bandpass.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start(now);
+      noise.stop(now + 0.06);
     } catch (e) {
       // 静默失败
     }
@@ -1038,6 +1078,13 @@ class WeiQiGame {
   /**
    * 切换游戏模式（play/review）
    */
+  toggleSound() {
+    const enabled = this.sound.toggle();
+    if (this.ui.soundToggleBtn) {
+      this.ui.soundToggleBtn.textContent = enabled ? '音效：开 🔊' : '音效：关 🔇';
+    }
+  }
+
   toggleMode() {
     if (this.mode === 'play') {
       this.mode = 'review';
