@@ -263,7 +263,15 @@ class Stone {
   /**
    * 在指定 context 上绘制棋子（用于导出）
    */
-  drawOnCtx(ctx, col, row, color) {
+  /**
+   * 在指定 context 上绘制棋子（用于导出）
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} col
+   * @param {number} row
+   * @param {string} color 'black' | 'white'
+   * @param {boolean} isLastMove 是否为最后一步落子
+   */
+  drawOnCtx(ctx, col, row, color, isLastMove = false) {
     const { x: centerX, y: centerY } = this.board.convertBoardToPixelPos(col, row);
     const radius = this.board.getStoneRadius();
 
@@ -288,10 +296,31 @@ class Stone {
     }
 
     ctx.fill();
+
+    // 最后落子的棋子：右下角小三角标记
+    if (isLastMove) {
+      const markSize = radius * 0.3;
+      const mx = centerX + radius * 0.45;
+      const my = centerY + radius * 0.45;
+      const markColor = color === 'black' ? '#ffffff' : '#ff3b30';
+      ctx.fillStyle = markColor;
+      ctx.beginPath();
+      ctx.moveTo(mx, my - markSize);
+      ctx.lineTo(mx + markSize, my);
+      ctx.lineTo(mx, my + markSize);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
 
   /**
    * 在指定 context 上绘制死子标记（用于导出）
+   */
+  /**
+   * 在指定 context 上绘制死子标记（用于导出）
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} col
+   * @param {number} row
    */
   drawDeadMarkOnCtx(ctx, col, row) {
     const { x: centerX, y: centerY } = this.board.convertBoardToPixelPos(col, row);
@@ -832,7 +861,20 @@ class UI {
       return `(${this.game.board.convertToAlphanumeric(parseInt(col), parseInt(row))})`;
     });
     // 第一行：模式标识；第二行：消息内容
-    this.statusEl.innerHTML = '<span class="status-mode">' + prefix + '</span><span class="status-msg">' + formattedMessage.replace(/<br>/g, '</span><span class="status-msg">') + '</span>';
+    // 安全地分两行显示：拆分段落后用 textContent 设置
+    this.statusEl.innerHTML = '';
+    const modeSpan = document.createElement('span');
+    modeSpan.className = 'status-mode';
+    modeSpan.textContent = prefix;
+    this.statusEl.appendChild(modeSpan);
+
+    const parts = formattedMessage.split('<br>');
+    for (let i = 0; i < parts.length; i++) {
+      const msgSpan = document.createElement('span');
+      msgSpan.className = 'status-msg';
+      msgSpan.textContent = parts[i];
+      this.statusEl.appendChild(msgSpan);
+    }
   }
 
   /**
@@ -1293,7 +1335,8 @@ class WeiQiGame {
     for (let row = 0; row < this.board.boardSize; row++) {
       for (let col = 0; col < this.board.boardSize; col++) {
         if (boardState[row][col]) {
-          this.stone.drawOnCtx(exportCtx, col, row, boardState[row][col]);
+          const isLast = this.lastMove && this.lastMove.col === col && this.lastMove.row === row;
+          this.stone.drawOnCtx(exportCtx, col, row, boardState[row][col], isLast);
 
           const key = col + ',' + row;
           if (this.rule.deadStones.has(key)) {
