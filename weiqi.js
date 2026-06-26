@@ -1303,6 +1303,25 @@ class WeiQiGame {
       }
     }
 
+    // 打谱模式下导出包含坐标标注
+    if (this.mode === 'review') {
+      const letters = 'ABCDEFGHJKLMNOPQRST';
+      exportCtx.fillStyle = '#1d1d1f';
+      exportCtx.font = '12px Arial';
+      exportCtx.textAlign = 'center';
+      exportCtx.textBaseline = 'middle';
+
+      for (let row = 0; row < this.board.boardSize; row++) {
+        const y = exportCanvas.height - this.board.margin - row * this.board.cellSize;
+        exportCtx.fillText((row + 1).toString(), this.board.margin - 12, y);
+      }
+
+      for (let col = 0; col < this.board.boardSize; col++) {
+        const x = this.board.margin + col * this.board.cellSize;
+        exportCtx.fillText(letters[col], x, exportCanvas.height - this.board.margin + 12);
+      }
+    }
+
     const link = document.createElement('a');
     link.download = 'weiqi-' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '') + '.png';
     link.href = exportCanvas.toDataURL('image/png');
