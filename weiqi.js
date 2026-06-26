@@ -664,15 +664,24 @@ class Rule {
     
     const lastMove = moveHistory.pop();
     this.boardState[lastMove.row][lastMove.col] = null;
-    const opponent = lastMove.player === 'black' ? 'white' : 'black';
-    this.captured[opponent] -= lastMove.captured;
-    this.koPos = null;
     
-    return {
-      success: true,
-      message: `已悔棋，${lastMove.player === 'black' ? '黑方' : '白方'} 回合`,
-      currentPlayer: lastMove.player
-    };
+    if (lastMove.type === 'play') {
+      const opponent = lastMove.player === 'black' ? 'white' : 'black';
+      this.captured[opponent] -= lastMove.captured;
+      this.koPos = lastMove.koPrev;
+      
+      return {
+        success: true,
+        message: `已悔棋，${lastMove.player === 'black' ? '黑方' : '白方'} 回合`,
+        currentPlayer: lastMove.player
+      };
+    } else {
+      return {
+        success: true,
+        message: '已撤销落子',
+        currentPlayer: 'black'
+      };
+    }
   }
 
   /**
@@ -1070,6 +1079,12 @@ class WeiQiGame {
         this.sound.playPlace(this.reviewCurrentColor);
         if (result.captured > 0) this.sound.playCapture();
         this.lastMove = { col, row };
+        this.moveHistory.push({
+          col, row,
+          player: this.reviewCurrentColor,
+          captured: result.captured || 0,
+          type: 'review'
+        });
         this.ui.updateTurnIndicator(this.reviewCurrentColor);
         this.ui.updateStatus(result.message);
         this.redrawBoard();
@@ -1085,7 +1100,8 @@ class WeiQiGame {
           col, row,
           player: this.currentPlayer,
           captured: result.captured,
-          koPos: result.koPos ? { ...result.koPos } : null
+          koPrev: this.rule.koPos ? { ...this.rule.koPos } : null,
+          type: 'play'
         });
         
         // 切换玩家
@@ -1194,12 +1210,18 @@ class WeiQiGame {
    * 悔棋
    */
   undoMove() {
+    if (this.mode === 'review' && this.rule.isEndgameSubmitted) {
+      this.ui.updateStatus('终局状态下不可撤销');
+      return;
+    }
     const result = this.rule.undoMove(this.moveHistory);
     if (result.success) {
       this.currentPlayer = result.currentPlayer;
       this.lastMove = this.moveHistory.length > 0 ? this.moveHistory[this.moveHistory.length - 1] : null;
       this.ui.updateTurnIndicator(this.currentPlayer);
       this.ui.updateStatus(result.message);
+      this.redrawBoard();
+      this.ui.updateStats();
     } else {
       this.ui.updateStatus(result.message);
     }
