@@ -261,6 +261,49 @@ class Stone {
   }
 
   /**
+   * 在指定 context 上绘制棋子（用于导出）
+   */
+  drawOnCtx(ctx, col, row, color) {
+    const { x: centerX, y: centerY } = this.board.convertBoardToPixelPos(col, row);
+    const radius = this.board.getStoneRadius();
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+
+    const gradient = ctx.createRadialGradient(
+      centerX - radius * 0.25, centerY - radius * 0.25, 0,
+      centerX, centerY, radius
+    );
+
+    if (color === 'black') {
+      gradient.addColorStop(0, '#3a3a3a');
+      gradient.addColorStop(0.5, '#2a2a2a');
+      gradient.addColorStop(1, '#1a1a1a');
+      ctx.fillStyle = gradient;
+    } else {
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(0.5, '#f8f8f8');
+      gradient.addColorStop(1, '#f0f0f0');
+      ctx.fillStyle = gradient;
+    }
+
+    ctx.fill();
+  }
+
+  /**
+   * 在指定 context 上绘制死子标记（用于导出）
+   */
+  drawDeadMarkOnCtx(ctx, col, row) {
+    const { x: centerX, y: centerY } = this.board.convertBoardToPixelPos(col, row);
+    const radius = this.board.getStoneRadius();
+
+    ctx.fillStyle = 'rgba(229, 62, 62, 0.5)';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  /**
    * 绘制Hover效果
    * @param {number} col 列
    * @param {number} row 行
