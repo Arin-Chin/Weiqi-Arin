@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 # ⚫⚪ WeiQi · 围棋
 
@@ -23,7 +23,9 @@
 - **Komi Settings** — Chinese (3¾), Japanese/Korean (6.5), no komi
 - **Undo / Reset** — step back or start a fresh game anytime
 - **Stats Panel** — live count of stones on board and captured
-- **Hover Preview** — see where you"re placing before you click
+- **Sound Effects** — Web Audio synthesized stone-placing sounds
+- **Export Board** — save the current board as PNG image
+- **Hover Preview** — see where you're placing before you click
 - **Fully offline** — single HTML file + JS, zero dependencies
 
 ### 中文
@@ -31,8 +33,12 @@
 - **打谱模式** — 自由放置黑白棋子，方便棋局复盘与研究
 - **终局数子** — 提交终局 → 标记死子 → 自动计算胜负
 - **贴目设置** — 支持中国规则（3¾子）、日韩规则（6.5目）、无贴目
-- **悔棋与重置** — 随时撤销上一步或重新开始
+- **悔棋与重置** — 逐步撤销，支持对战和打谱双模式
 - **统计面板** — 实时显示黑白双方在盘数与吃子数
+- **落子音效** — Web Audio 合成，无外部文件，可开关
+- **导出棋局** — 将当前棋盘保存为 PNG 图片
+- **最后落子标记** — 棋盘上清晰标识最后一步棋
+- **回合指示器** — 黑白棋子 UI 替代纯文本提示
 - **悬停预览** — 落子前看到棋子位置，减少误点
 - **完全离线** — 单 HTML + JS，零依赖
 
@@ -44,7 +50,7 @@
 [Click here to play online](https://arin-chin.github.io/Weiqi-Arin/)
 
 ### 📦 Local
-Just open \`index.html\` in any modern browser — that"s it.
+Just open `index.html` in any modern browser — that's it.
 
 ```bash
 git clone https://github.com/Arin-Chin/Weiqi-Arin.git
@@ -63,6 +69,7 @@ cd Weiqi-Arin
 | **Endgame** | Click "提交终局" → mark dead stones → "计算胜负" for the result. |
 | **Komi** | Select komi from the dropdown before or during the game. |
 | **Undo** | Click "悔棋" to step back. |
+| **Export** | Click "导出棋局" to save board as PNG. |
 | **Reset** | Click "重新开始" for a clean board. |
 
 ---
@@ -72,7 +79,7 @@ cd Weiqi-Arin
 ```
 Weiqi-Arin/
 ├── index.html          # ⚫⚪ 主页面（棋盘 + 面板）
-├── weiqi.js            # 🧠 核心逻辑（Board / Stone / GameRule / UI / Game）
+├── weiqi.js            # 🧠 核心逻辑（Board / Stone / Rule / UI / Sound / Game）
 ├── README.md           # 📖 项目文档
 ├── LICENSE             # ⚖️ MIT 开源许可
 └── .gitignore          # 🙈 Git 忽略规则
@@ -84,7 +91,7 @@ Weiqi-Arin/
 
 - **Vanilla JavaScript** (ES6 Class) — no frameworks, no build tools
 - **HTML5 Canvas** — board rendering & stone drawing
-- **Offscreen Canvas** — cached background for performance
+- **Web Audio API** — synthesized sound effects, no external files
 - **CSS Flexbox** — responsive three-panel layout
 
 ---

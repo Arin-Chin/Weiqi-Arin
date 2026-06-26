@@ -1235,6 +1235,11 @@ class WeiQiGame {
    * 导出当前棋局为图片
    */
   exportBoardImage() {
+    // 临时清除 hover 状态，避免阴影出现在导出图片中
+    const savedHover = this.hoveredPos;
+    this.hoveredPos = null;
+    this.redrawBoard();
+
     const canvas = this.board.canvas;
     const link = document.createElement('a');
     link.download = 'weiqi-' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '') + '.png';
@@ -1242,6 +1247,10 @@ class WeiQiGame {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // 恢复 hover 状态
+    this.hoveredPos = savedHover;
+    this.redrawBoard();
 
     this.ui.updateStatus('棋局图片已导出');
   }
