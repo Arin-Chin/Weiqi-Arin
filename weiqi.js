@@ -1070,6 +1070,7 @@ class WeiQiGame {
         this.sound.playPlace(this.reviewCurrentColor);
         if (result.captured > 0) this.sound.playCapture();
         this.lastMove = { col, row };
+        this.ui.updateTurnIndicator(this.reviewCurrentColor);
         this.ui.updateStatus(result.message);
         this.redrawBoard();
         this.ui.updateStats();
@@ -1119,6 +1120,7 @@ class WeiQiGame {
       this.reviewCurrentColor = 'black';
       this.ui.toggleModeUI('review');
       this.ui.updateReviewColorBtn('black');
+      this.ui.updateTurnIndicator('black');
       this.ui.updateStatus(`已切换到打谱模式（当前选择黑棋）`);
     } else {
       this.mode = 'play';
@@ -1136,6 +1138,7 @@ class WeiQiGame {
     if (this.mode !== 'review') return;
     this.reviewCurrentColor = color;
     this.ui.updateReviewColorBtn(color);
+    this.ui.updateTurnIndicator(color);
     this.ui.updateStatus(`当前选择${color === 'black' ? '黑' : '白'}棋`);
     this.redrawBoard();
   }
