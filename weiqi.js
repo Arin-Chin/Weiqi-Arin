@@ -775,7 +775,8 @@ class UI {
     const formattedMessage = message.replace(/\((\d+),(\d+)\)/g, (_, col, row) => {
       return `(${this.game.board.convertToAlphanumeric(parseInt(col), parseInt(row))})`;
     });
-    this.statusEl.textContent = `${prefix}${formattedMessage}`;
+    // 第一行：模式标识；第二行：消息内容
+    this.statusEl.innerHTML = '<span class="status-mode">' + prefix + '</span><span class="status-msg">' + formattedMessage + '</span>';
   }
 
   /**

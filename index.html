@@ -116,11 +116,22 @@
       font-weight: 500;
       width: 100%;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 4px;
       word-wrap: break-word;
       white-space: normal;
       line-height: 1.5;
+    }
+    .status-mode {
+      font-size: 13px;
+      color: #86868b;
+      font-weight: 400;
+    }
+    .status-msg {
+      font-size: 16px;
+      font-weight: 600;
     }
     .score-result {
       padding: 10px;
@@ -274,6 +285,7 @@
       #status {
         width: 100%;
         padding: 15px 12px;
+        gap: 4px;
       }
       .btn {
         width: auto;
