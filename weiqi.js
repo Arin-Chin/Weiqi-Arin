@@ -1236,25 +1236,9 @@ class WeiQiGame {
    */
   exportBoardImage() {
     const canvas = this.board.canvas;
-    const padding = 40;
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = canvas.width + padding * 2;
-    exportCanvas.height = canvas.height + padding * 2;
-    const ctx = exportCanvas.getContext('2d');
-
-    ctx.fillStyle = '#DEB887';
-    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    ctx.drawImage(canvas, padding, padding);
-
-    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-    ctx.font = '11px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('WeiQi-Arin', exportCanvas.width / 2, exportCanvas.height - 6);
-
     const link = document.createElement('a');
     link.download = 'weiqi-' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '') + '.png';
-    link.href = exportCanvas.toDataURL('image/png');
+    link.href = canvas.toDataURL('image/png');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
