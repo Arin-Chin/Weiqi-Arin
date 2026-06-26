@@ -1,4 +1,4 @@
-' + '<div align="center">
+<div align="center">
 
 # ⚫⚪ WeiQi · 围棋
 
@@ -7,9 +7,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/GitHub-Pages-222222?logo=github-pages&logoColor=white)](https://arin-chin.github.io/Weiqi-Arin/)
 
-> 🏮 供围棋爱好者打谱研究、自娱自乐。轻量纯前端，打开即用，无需后端。
->
-> A lightweight Go/Baduk game studio for replaying, studying, and playing. No backend required.
+🏮 供围棋爱好者打谱研究、自娱自乐。轻量纯前端，打开即用，无需后端。
+A lightweight Go/Baduk game studio for replaying, studying, and playing. No backend required.
 
 ---
 
@@ -105,11 +104,3 @@ Weiqi-Arin/
 ## 📄 License / 许可
 
 [MIT](LICENSE) © 2026 ArinChin
-
----
-
-<div align="center">
-
-Made with ❤️ and Go stones
-
-</div>
