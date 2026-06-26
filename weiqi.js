@@ -450,7 +450,7 @@ class Rule {
     this.captured[opponent] += capturedStones;
     return {
       success: true,
-      message: `落${currentColor === 'black' ? '黑' : '白'}棋：(${col},${row})，提子${capturedStones}颗`,
+      message: `落${currentColor === 'black' ? '黑' : '白'}棋：(${col},${row})<br>提子${capturedStones}颗`,
       captured: capturedStones
     };
   }
@@ -785,7 +785,7 @@ class UI {
       return `(${this.game.board.convertToAlphanumeric(parseInt(col), parseInt(row))})`;
     });
     // 第一行：模式标识；第二行：消息内容
-    this.statusEl.innerHTML = '<span class="status-mode">' + prefix + '</span><span class="status-msg">' + formattedMessage + '</span>';
+    this.statusEl.innerHTML = '<span class="status-mode">' + prefix + '</span><span class="status-msg">' + formattedMessage.replace(/<br>/g, '</span><span class="status-msg">') + '</span>';
   }
 
   /**
