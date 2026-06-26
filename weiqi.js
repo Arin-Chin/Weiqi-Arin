@@ -1235,22 +1235,37 @@ class WeiQiGame {
    * 导出当前棋局为图片
    */
   exportBoardImage() {
-    // 临时清除 hover 状态，避免阴影出现在导出图片中
-    const savedHover = this.hoveredPos;
-    this.hoveredPos = null;
-    this.redrawBoard();
+    // 使用独立 Canvas 同步绘制，不依赖主 Canvas 上的异步重绘
+    // 因此不会包含 hover 阴影
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = this.board.canvas.width;
+    exportCanvas.height = this.board.canvas.height;
+    const exportCtx = exportCanvas.getContext('2d');
 
-    const canvas = this.board.canvas;
+    // 1. 棋盘背景（离屏画布已有完整背景）
+    exportCtx.drawImage(this.board.offscreenCanvas, 0, 0);
+
+    // 2. 绘制所有棋子（不含 hover）
+    const boardState = this.rule.boardState;
+    for (let row = 0; row < this.board.boardSize; row++) {
+      for (let col = 0; col < this.board.boardSize; col++) {
+        if (boardState[row][col]) {
+          this.stone.drawOnCtx(exportCtx, col, row, boardState[row][col]);
+
+          const key = col + ',' + row;
+          if (this.rule.deadStones.has(key)) {
+            this.stone.drawDeadMarkOnCtx(exportCtx, col, row);
+          }
+        }
+      }
+    }
+
     const link = document.createElement('a');
     link.download = 'weiqi-' + new Date().toISOString().slice(0, 19).replace(/[:-]/g, '') + '.png';
-    link.href = canvas.toDataURL('image/png');
+    link.href = exportCanvas.toDataURL('image/png');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    // 恢复 hover 状态
-    this.hoveredPos = savedHover;
-    this.redrawBoard();
 
     this.ui.updateStatus('棋局图片已导出');
   }
