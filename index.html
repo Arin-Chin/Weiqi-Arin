@@ -72,6 +72,40 @@
       margin-left: 8px;
       font-weight: 400;
     }
+    .turn-indicator {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+    .turn-indicator.black {
+      background: radial-gradient(circle at 35% 35%, #3a3a3a, #1a1a1a);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .turn-indicator.white {
+      background: radial-gradient(circle at 35% 35%, #ffffff, #e8e8e8);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .turn-indicator {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+    .turn-indicator.black {
+      background: radial-gradient(circle at 35% 35%, #3a3a3a, #1a1a1a);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .turn-indicator.white {
+      background: radial-gradient(circle at 35% 35%, #ffffff, #e8e8e8);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid rgba(0,0,0,0.08);
+    }
     #status {
       font-size: 18px;
       color: #1d1d1f;
@@ -255,6 +289,7 @@
 </head>
 <body>
   <div class="stats-panel">
+    <div id="turn-indicator" class="turn-indicator black"></div>
     <div id="status">游戏开始，黑方先行【对战模式】</div>
     <div class="score-result" id="scoreResult">
       <p>黑棋总子数：<span id="blackTotal">0</span></p>

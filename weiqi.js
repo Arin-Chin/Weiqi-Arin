@@ -187,7 +187,7 @@ class Stone {
    * @param {number} row 行
    * @param {string} color 颜色（black/white）
    */
-  draw(col, row, color) {
+  draw(col, row, color, isLastMove = false) {
     const { x: centerX, y: centerY } = this.board.convertBoardToPixelPos(col, row);
     const radius = this.board.getStoneRadius();
     
@@ -228,6 +228,21 @@ class Stone {
     this.ctx.shadowBlur = 0;
     this.ctx.shadowOffsetX = 0;
     this.ctx.shadowOffsetY = 0;
+
+    // 最后落子的棋子：右下角小三角标记
+    if (isLastMove) {
+      const markSize = radius * 0.3;
+      const mx = centerX + radius * 0.45;
+      const my = centerY + radius * 0.45;
+      const markColor = color === 'black' ? '#ffffff' : '#ff3b30';
+      this.ctx.fillStyle = markColor;
+      this.ctx.beginPath();
+      this.ctx.moveTo(mx, my - markSize);
+      this.ctx.lineTo(mx + markSize, my);
+      this.ctx.lineTo(mx, my + markSize);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
   }
 
   /**
@@ -713,6 +728,7 @@ class UI {
     this.undoBtn = document.getElementById('undo-btn');
     this.soundToggleBtn = document.getElementById('sound-toggle-btn');
     this.resetBtn = document.getElementById('reset-btn');
+    this.turnIndicator = document.getElementById('turn-indicator');
   }
 
   /**
@@ -805,6 +821,11 @@ class UI {
    * 切换模式UI
    * @param {string} mode 当前模式（play/review）
    */
+  updateTurnIndicator(player) {
+    if (!this.turnIndicator) return;
+    this.turnIndicator.className = 'turn-indicator ' + player;
+  }
+
   toggleModeUI(mode) {
     if (mode === 'review') {
       this.stoneSwitchContainer.style.display = 'flex';
@@ -843,6 +864,7 @@ class UI {
    * 重置UI状态（根据当前模式更新提示）
    */
   resetUI() {
+    if (this.turnIndicator) this.turnIndicator.className = 'turn-indicator black';
     this.scoreResultEl.style.display = 'none';
     this.toggleEndgameUI(false, false);
     this.updateReviewColorBtn('black');
@@ -993,6 +1015,7 @@ class WeiQiGame {
     this.reviewCurrentColor = 'black';
     this.hoveredPos = null;
     this.moveHistory = [];
+    this.lastMove = null;
 
     // 绑定画布事件
     this.bindCanvasEvents();
@@ -1044,6 +1067,7 @@ class WeiQiGame {
       if (result.success) {
         this.sound.playPlace(this.reviewCurrentColor);
         if (result.captured > 0) this.sound.playCapture();
+        this.lastMove = { col, row };
         this.ui.updateStatus(result.message);
         this.redrawBoard();
         this.ui.updateStats();
@@ -1066,6 +1090,8 @@ class WeiQiGame {
         
         this.sound.playPlace(this.currentPlayer === 'black' ? 'black' : 'white');
         if (result.captured > 0) this.sound.playCapture();
+        this.lastMove = { col, row };
+        this.ui.updateTurnIndicator(this.currentPlayer);
         this.ui.updateStatus(`${this.currentPlayer === 'black' ? '黑方' : '白方'} 回合`);
         this.redrawBoard();
         this.ui.updateStats();
@@ -1166,6 +1192,8 @@ class WeiQiGame {
     const result = this.rule.undoMove(this.moveHistory);
     if (result.success) {
       this.currentPlayer = result.currentPlayer;
+      this.lastMove = this.moveHistory.length > 0 ? this.moveHistory[this.moveHistory.length - 1] : null;
+      this.ui.updateTurnIndicator(this.currentPlayer);
       this.ui.updateStatus(result.message);
     } else {
       this.ui.updateStatus(result.message);
@@ -1184,6 +1212,7 @@ class WeiQiGame {
     this.reviewCurrentColor = 'black';
     this.hoveredPos = null;
     this.moveHistory = [];
+    this.lastMove = null;
     
     // 重置UI（根据当前模式更新）
     this.ui.resetUI();
@@ -1205,7 +1234,8 @@ class WeiQiGame {
       for (let row = 0; row < this.board.boardSize; row++) {
         for (let col = 0; col < this.board.boardSize; col++) {
           if (boardState[row][col]) {
-            this.stone.draw(col, row, boardState[row][col]);
+            const isLast = this.lastMove && this.lastMove.col === col && this.lastMove.row === row;
+            this.stone.draw(col, row, boardState[row][col], isLast);
             
             // 绘制死子标记
             const key = `${col},${row}`;
