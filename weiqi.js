@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 1. Board类：负责棋盘渲染、坐标转换、星位绘制（纯视觉+坐标逻辑）
  */
 class Board {
@@ -1229,7 +1229,7 @@ class WeiQiGame {
     } else {
       this.ui.updateStatus(result.message);
     }
-
+  }
 
   /**
    * 导出当前棋局为图片
