@@ -1022,6 +1022,7 @@ class WeiQiGame {
     this.bindCanvasEvents();
 
     // 初始化渲染
+    this.ui.updateStatus('游戏开始，黑方先行');
     this.board.draw(this.mode === 'review');
     this.ui.updateStats();
   }
